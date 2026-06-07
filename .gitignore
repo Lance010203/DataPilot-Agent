@@ -1,0 +1,11 @@
+__pycache__/
+pycache/
+*.py[cod]
+.pyc
+.env
+.DS_Store
+.venv/
+venv/
+reports/generated_*.md
+reports/generated_.md
+.streamlit/
