@@ -84,7 +84,7 @@ DataPilot-Agent/
 建议使用 Python 3.10 或更高版本。
 
 ```bash
-git clone https://github.com/your-name/DataPilot-Agent.git
+git clone https://github.com/Lance010203/DataPilot-Agent.git
 cd DataPilot-Agent
 
 python3 -m venv .venv
