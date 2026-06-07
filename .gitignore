@@ -9,3 +9,4 @@ venv/
 reports/generated_*.md
 reports/generated_.md
 .streamlit/
+.idea/
