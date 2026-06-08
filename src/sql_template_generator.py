@@ -143,3 +143,43 @@ def generate_sql_templates(
         )
 
     return templates
+
+
+def generate_python_templates(df: pd.DataFrame, scene_name: str) -> List[Dict[str, str]]:
+    """根据字段生成简洁的 Pandas 分析模板。"""
+    columns = [str(column) for column in df.columns]
+    date_column = _find_column(columns, ("date", "time", "日期", "时间"))
+    amount_column = _find_column(columns, ("amount", "price", "revenue", "gmv", "金额", "价格"))
+    category_column = _find_category_column(df, date_column)
+    templates = [
+        {
+            "title": "基础数据质量检查",
+            "description": "复核数据规模、缺失和重复情况。",
+            "python": "print(df.shape)\nprint(df.isna().sum().sort_values(ascending=False))\nprint(df.duplicated().sum())",
+        }
+    ]
+    if date_column:
+        templates.append(
+            {
+                "title": "时间趋势分析",
+                "description": f"按 `{date_column}` 汇总每日记录量。",
+                "python": (
+                    f"df['{date_column}'] = pd.to_datetime(df['{date_column}'], errors='coerce')\n"
+                    f"daily = df.groupby(df['{date_column}'].dt.date).size()\n"
+                    "print(daily)"
+                ),
+            }
+        )
+    if category_column:
+        value_expression = f"['{amount_column}'].sum()" if amount_column else ".size()"
+        templates.append(
+            {
+                "title": "业务维度贡献分析",
+                "description": f"按 `{category_column}` 计算贡献排名。",
+                "python": (
+                    f"ranking = df.groupby('{category_column}'){value_expression}\n"
+                    "print(ranking.sort_values(ascending=False).head(10))"
+                ),
+            }
+        )
+    return templates

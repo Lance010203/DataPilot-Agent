@@ -1,110 +1,75 @@
-# DataPilot Agent 数据分析初步报告
+# DataPilot Agent 初步商业分析报告
 
-> 本报告由规则驱动的 DataPilot Agent Workflow 基于 `data/sample_orders.csv` 自动生成，结论需结合业务口径复核。
+> 本报告基于 `data/sample_orders.csv` 生成，关键口径与业务结论需人工确认。
 
-## 1. 数据概览
+## 1. Executive Summary
 
-- 数据行数：30
-- 数据列数：9
-- 重复行数：1
+当前数据被识别为 **订单/交易数据**，场景置信度较高。样例共 30 行、9 列，存在 1 行重复记录、5 个包含缺失值的字段以及少量 IQR 潜在异常值。
 
-数据包含订单、用户、下单时间、商品品类、数量、价格、支付状态、城市和配送时长字段。
+建议优先：
 
-## 2. 字段信息
+1. 拆解 GMV = 订单量 × 客单价；
+2. 分析城市和品类贡献；
+3. 定位支付失败与高配送时长订单。
 
-| 字段 | 类型 | 缺失数 | 缺失率 |
-|---|---|---:|---:|
-| order_id | object | 0 | 0.00% |
-| user_id | object | 0 | 0.00% |
-| order_time | object | 0 | 0.00% |
-| product_category | object | 0 | 0.00% |
-| quantity | float64 | 1 | 3.33% |
-| price | float64 | 1 | 3.33% |
-| payment_status | object | 1 | 3.33% |
-| city | object | 1 | 3.33% |
-| delivery_minutes | float64 | 1 | 3.33% |
+## 2. 数据基本信息
 
-## 3. 数据质量检查
+- 数据规模：30 行 × 9 列
+- 主要维度：用户、商品品类、城市、支付状态、时间
+- 主要指标：数量、价格、配送时长
 
-- 检测到 1 行完全重复记录；
-- `quantity`、`price`、`payment_status`、`city` 和 `delivery_minutes` 存在少量缺失；
-- `quantity`、`price` 和 `delivery_minutes` 存在 IQR 潜在异常值；
-- `order_time` 当前为文本类型，建议转换为 datetime；
-- 支付状态和城市等类别字段需要检查取值一致性。
+## 3. 业务场景判断与置信度
 
-潜在异常值是统计规则识别出的候选值，不代表一定是错误数据。例如高价商品和较长配送时间可能是真实业务事件。
+- 最终采用场景：**订单/交易数据**
+- 自动判断置信度：**98%**
+- 判断依据：
+  - 订单标识：`order_id`
+  - 用户：`user_id`
+  - 商品：`product_category`
+  - 金额数量：`price`、`quantity`
+  - 时间状态：`order_time`、`payment_status`
 
-## 4. 业务场景推断
+## 4. 关键指标概览
 
-- 推断场景：**订单/交易数据**
-- 判断依据：字段中包含 `order`、`user`、`price`、`payment`、`product` 等交易关键词。
+| 指标 | 当前值 | 说明 |
+|---|---:|---|
+| 总订单量 | 29 | 按 `order_id` 去重 |
+| 总 GMV | ¥16,364.80 | `price × quantity` 汇总 |
+| 平均客单价 | ¥564.30 | GMV ÷ 订单量 |
+| 支付成功率 | 80.0% | 基于 `payment_status` |
+| 用户数 | 24 | 按 `user_id` 去重 |
 
-可进一步关注的业务问题：
+## 5. 数据质量问题
 
-- 用户消费金额分布如何？
-- 哪些商品或客户贡献更高？
-- 订单支付成功情况如何？
+- 1 行完全重复记录可能导致重复统计；
+- `quantity`、`price`、`payment_status`、`city`、`delivery_minutes` 存在缺失；
+- `quantity`、`price`、`delivery_minutes` 存在 IQR 潜在异常值；
+- `order_time` 应转换为 datetime 后再进行趋势分析。
 
-## 5. 清洗建议
+## 6. 主要可视化发现
 
-1. 将 `order_time` 转换为 datetime，并记录解析失败的值。
-2. 结合订单主键检查重复记录，确认后再去重。
-3. 对少量缺失值按字段含义分别处理，不对 ID 字段做均值填补。
-4. 统一支付状态、城市和商品品类的空格、大小写及同义值。
-5. 对数量、价格和配送时长异常值进行业务复核，可先标记而不是直接删除。
-6. 保留原始数据和清洗日志，便于追踪处理前后的数据变化。
+- 交易趋势图用于判断 GMV 是否存在明显增长、下滑或异常波动；
+- 品类贡献图用于识别高贡献品类并辅助资源配置；
+- 价格分布图用于观察客单价集中区间和高价值订单；
+- 支付状态图用于定位失败和待支付占比；
+- 数量与价格散点图用于识别高数量或高金额异常订单。
 
-## 6. 后续分析建议
+## 7. 初步商业洞察
 
-1. 按日或按周分析订单量、成交金额和客单价趋势。
-2. 按用户累计消费金额进行分层，识别高价值用户。
-3. 按商品品类统计销量与销售额排行。
-4. 分析不同支付状态的占比和支付成功率。
-5. 按城市对比订单规模和平均配送时长。
-6. 分析配送时长的 P50、P90 及超时订单。
+- 当前样例具备订单、用户、品类、金额和支付状态等核心分析维度；
+- GMV 口径需要确认 `price` 是订单金额还是商品单价；
+- 城市与品类贡献、支付成功率和配送时效可以形成第一版经营诊断。
 
-## 7. SQL 分析模板
+## 8. 后续分析建议
 
-### 查看总行数
+1. 先建立 GMV、订单量、客单价和支付成功率基线；
+2. 按城市、品类和用户层级分析贡献结构；
+3. 回查支付失败、超长配送和极端金额订单；
+4. 后续补充渠道、成本、用户行为和复购字段。
 
-```sql
-SELECT COUNT(*) AS total_rows
-FROM your_table;
-```
+## 9. 可执行下一步
 
-### 按日期聚合
-
-```sql
-SELECT DATE(`order_time`) AS stat_date,
-       COUNT(*) AS record_count
-FROM your_table
-GROUP BY DATE(`order_time`)
-ORDER BY stat_date;
-```
-
-### 按商品品类统计
-
-```sql
-SELECT `product_category`,
-       COUNT(*) AS order_count,
-       SUM(`quantity`) AS total_quantity,
-       SUM(`price`) AS total_price
-FROM your_table
-GROUP BY `product_category`
-ORDER BY total_price DESC;
-```
-
-### 用户维度统计
-
-```sql
-SELECT `user_id`,
-       COUNT(*) AS order_count,
-       SUM(`price`) AS total_price
-FROM your_table
-GROUP BY `user_id`
-ORDER BY total_price DESC;
-```
-
-## 8. 总结
-
-当前数据被初步识别为订单/交易数据。建议先处理时间类型、少量缺失值和重复记录，并对高价、批量购买和超长配送样本进行业务复核，再开展订单趋势、用户分层、品类贡献和履约效率分析。
+1. 由业务人员确认订单主键、金额和支付成功口径；
+2. 使用 Human-in-the-loop 功能清理重复行并转换时间字段；
+3. 使用 SQL / Python 模板复核指标；
+4. 将确认后的 KPI、图表和结论沉淀为正式经营分析报告。
